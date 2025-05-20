@@ -37,24 +37,24 @@ class GetHostSSLCertificate {
                 const result = {
                     subject: cert?.subject?.CN ?? "No subject found.",
                     issuer: cert?.issuer.C ?? "No issuer found.",
-                    subjectaltName: cert.subjectaltname ?? "No subject aly name found.",
+                    subjectaltName: cert.subjectaltname.split(",") ?? "No subject altName found.",
                     infoAccess: cert?.infoAccess ?? {},
                     ca: cert?.ca ?? false,
                     bits: cert?.bits ?? 0,
                     exponent: cert?.exponent ?? "No exponent found.",
-                    validFrom: cert?.valid_from ?? "Valid from not found.",
-                    validTo: cert?.valid_to ?? "Valid to not found.",
-                    fingerprint: cert?.fingerprint ?? "Fingetprint found.",
-                    fingerprint256: cert?.fingerprint256 ?? "Fingerprint256 not found.",
-                    fingerprint512: cert?.fingerprint512 ?? "Fingerprint512 not found.",
+                    validFrom: cert?.valid_from ?? "No validFrom found.",
+                    validTo: cert?.valid_to ?? "No validTo found.",
+                    fingerprint: cert?.fingerprint ?? "No fingetprint found.",
+                    fingerprint256: cert?.fingerprint256 ?? "No fingerprint256 found.",
+                    fingerprint512: cert?.fingerprint512 ?? "No fingerprint512 found.",
                     extKeyUsage: cert?.ext_key_usage ?? [],
-                    serialNumber: cert?.serialNumber ?? "Seriel number not found."
+                    serialNumber: cert?.serialNumber ?? "No serielNumber found."
                 }
 
                 //end the socket connection.
                 socket.end();
 
-                return successResponse(res, 200, "SSL certificate details fetched.", result)
+                return successResponse(res, 200, "SSL certificate details fetched successfully.", result)
 
             })
 
