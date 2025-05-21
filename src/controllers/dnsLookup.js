@@ -3,7 +3,7 @@ const { errorResponse, successResponse } = require("../utils/responseHandler");
 
 /**
  * @description To check the DNS record of a host (A, AAAA, CNAME, etc.)
- * @route       GET /dns-lookup?host=example.com&type=A
+ * @route       GET /dns-lookup?host=example.com
  * @access      Nill
  */
 class DnsLookUp {
@@ -31,7 +31,7 @@ class DnsLookUp {
                     result[type] = records;
                 }
                 catch (err) {
-                    result[type] = `No records or error: ${err.code || err.message}`;
+                    result[type] = `Record not found`;
                 }
             }
 

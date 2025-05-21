@@ -2,7 +2,7 @@ const tls = require("node:tls");
 const { errorResponse, successResponse } = require("../utils/responseHandler");
 
 /**
- * @description To get the ssl certificate details of provided host.
+ * @description To get the ssl certificate record of given host.
  * @route       GET /host-ssl-information?host=example.com
  * @access      Nill
  */
@@ -10,59 +10,57 @@ class GetHostSSLCertificate {
     async details(req, res) {
         try {
 
-            // Destructure the incoming query.
             let { host = "" } = req.query;
 
-            // If the host is not provided then return error.
             if (!host) {
                 return errorResponse(res, 400, "Please provide a host.");
             }
 
-            // Clean host (remove protocol)
             host = host.replace(/^https?:\/\//, "").replace(/\/$/, "");
 
-            // create the options to getting ssl information.
             const options = {
                 host,
                 port: 443,
-                servername: host
-            }
+                servername: host,
+            };
 
-            // connect with tls and get the sll certificate information.
-            const socket = tls.connect(options, async () => {
+            // Since tls is supported callback option only try to use promise method to solve the problem.
+            const certData = await new Promise((resolve, reject) => {
+                // Use tls connect to get the sll information.
+                const socket = tls.connect(options, () => {
 
-                const cert = socket.getPeerCertificate()
+                    const cert = socket.getPeerCertificate();
 
-                // build the result.
-                const result = {
-                    subject: cert?.subject?.CN ?? "No subject found.",
-                    issuer: cert?.issuer.C ?? "No issuer found.",
-                    subjectaltName: cert.subjectaltname.split(",") ?? "No subject altName found.",
-                    infoAccess: cert?.infoAccess ?? {},
-                    ca: cert?.ca ?? false,
-                    bits: cert?.bits ?? 0,
-                    exponent: cert?.exponent ?? "No exponent found.",
-                    validFrom: cert?.valid_from ?? "No validFrom found.",
-                    validTo: cert?.valid_to ?? "No validTo found.",
-                    fingerprint: cert?.fingerprint ?? "No fingetprint found.",
-                    fingerprint256: cert?.fingerprint256 ?? "No fingerprint256 found.",
-                    fingerprint512: cert?.fingerprint512 ?? "No fingerprint512 found.",
-                    extKeyUsage: cert?.ext_key_usage ?? [],
-                    serialNumber: cert?.serialNumber ?? "No serielNumber found."
-                }
+                    // Build result object
+                    const result = {
+                        subject: cert?.subject?.CN ?? "No subject found.",
+                        issuer: cert?.issuer.C ?? "No issuer found.",
+                        subjectaltName: cert.subjectaltname?.split(",") ?? ["No subject altName found."],
+                        infoAccess: cert?.infoAccess ?? {},
+                        ca: cert?.ca ?? false,
+                        bits: cert?.bits ?? 0,
+                        exponent: cert?.exponent ?? "No exponent found.",
+                        validFrom: cert?.valid_from ?? "No validFrom found.",
+                        validTo: cert?.valid_to ?? "No validTo found.",
+                        fingerprint: cert?.fingerprint ?? "No fingerprint found.",
+                        fingerprint256: cert?.fingerprint256 ?? "No fingerprint256 found.",
+                        fingerprint512: cert?.fingerprint512 ?? "No fingerprint512 found.",
+                        extKeyUsage: cert?.ext_key_usage ?? [],
+                        serialNumber: cert?.serialNumber ?? "No serialNumber found.",
+                    };
 
-                //end the socket connection.
-                socket.end();
+                    // End the socket connection.
+                    socket.end();
 
-                return successResponse(res, 200, "SSL certificate details fetched successfully.", result)
+                    resolve(result);
+                });
 
-            })
-
-            socket.on('error', (err) => {
-                console.error("TLS socket error:", err.message);
-                return errorResponse(res, 500, `TLS connection failed: ${err.message}`);
+                socket.on("error", (err) => {
+                    reject(err);
+                });
             });
 
+            return successResponse(res, 200, "SSL certificate details fetched successfully.", certData);
 
         } catch (error) {
             console.error("Error fetching certificate:", error);
